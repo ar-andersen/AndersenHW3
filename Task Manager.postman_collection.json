@@ -1,0 +1,366 @@
+{
+	"info": {
+		"_postman_id": "526d243e-5ae7-43b4-97a3-6975983debc8",
+		"name": "Task Manager",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18721005"
+	},
+	"item": [
+		{
+			"name": "Sign up",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Alexander_new1\",\n    \"email\": \"alexander_new4@gmail.com\",\n    \"password\": \"11111111\",\n    \"role\": \"DM\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}:{{port}}/auth/register",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sign In",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"alexander_new1@gmail.com\",\n    \"password\": \"11111111\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}:{{port}}/auth/login",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all users",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{host}}:{{port}}/users",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete user by id",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{host}}:{{port}}/users/72eadc4e-d53c-4fa1-baaf-909f1c64f7b3",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"users",
+						"72eadc4e-d53c-4fa1-baaf-909f1c64f7b3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create project",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Clineco\",\n    \"description\": \"Healthcare marketplace\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}:{{port}}/projects",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"projects"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get project by id",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{host}}:{{port}}/projects/32fe81e0-fcbd-4f08-885e-1b928abe92e7",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"projects",
+						"32fe81e0-fcbd-4f08-885e-1b928abe92e7"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete project by id",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{host}}:{{port}}/projects/4451952a-2a5a-42e0-b357-9369c03561a5",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"projects",
+						"4451952a-2a5a-42e0-b357-9369c03561a5"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Task",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\": \"make API_5\",\n    \"description\": \"API description\",\n    \"reporterId\": \"f47cc90e-fa69-4e3a-85ac-56077de7f277\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}:{{port}}/projects/32fe81e0-fcbd-4f08-885e-1b928abe92e7/tasks",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"projects",
+						"32fe81e0-fcbd-4f08-885e-1b928abe92e7",
+						"tasks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all tasks by projectId",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{host}}:{{port}}/projects/32fe81e0-fcbd-4f08-885e-1b928abe92e7/tasks",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"projects",
+						"32fe81e0-fcbd-4f08-885e-1b928abe92e7",
+						"tasks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete task by id",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{host}}:{{port}}/tasks/cd24eccf-6e97-43c3-a5ff-cc0bf73920e2",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"tasks",
+						"cd24eccf-6e97-43c3-a5ff-cc0bf73920e2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create comment",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"message\": \"simple comment\",\n    \"userId\": \"9647e4cd-9aee-4cd0-9a45-b33f7c6dc9ce\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}:{{port}}/tasks/922640cc-32d5-4377-b653-87871c8404c5/comments?projectId=32fe81e0-fcbd-4f08-885e-1b928abe92e7",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"tasks",
+						"922640cc-32d5-4377-b653-87871c8404c5",
+						"comments"
+					],
+					"query": [
+						{
+							"key": "projectId",
+							"value": "32fe81e0-fcbd-4f08-885e-1b928abe92e7"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all comments",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{host}}:{{port}}/tasks/16414fc2-a2ad-4b35-a1fe-3ba64e47ce3a/comments?projectId=8ec226ab-5b0f-44c4-9195-77883de9d112",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"tasks",
+						"16414fc2-a2ad-4b35-a1fe-3ba64e47ce3a",
+						"comments"
+					],
+					"query": [
+						{
+							"key": "projectId",
+							"value": "8ec226ab-5b0f-44c4-9195-77883de9d112"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Task",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\": \"make API_3\",\n    \"description\": \"API description\",\n    \"reporterId\": \"346da901-2de2-4f48-b0b8-7ea164a9a4eb\",\n    \"assigneeId\": \"464386a2-e53e-47ec-bcf1-b8839a532242\",\n    \"status\": \"IN_PROGRESS\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}:{{port}}/projects/69c10fd1-4588-4f35-bf94-2f2694284f1b/tasks/39fc4e0c-92ad-4de3-91e4-7f3e654b14b1",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"projects",
+						"69c10fd1-4588-4f35-bf94-2f2694284f1b",
+						"tasks",
+						"39fc4e0c-92ad-4de3-91e4-7f3e654b14b1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add user to Project",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userId\": \"1a07ee66-5726-437e-92ff-d17b203c5263\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}:{{port}}/projects/d80a1399-1e2c-472b-8100-ba3f2e526681/users",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"projects",
+						"d80a1399-1e2c-472b-8100-ba3f2e526681",
+						"users"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "host",
+			"value": "localhost"
+		},
+		{
+			"key": "port",
+			"value": "8080"
+		}
+	]
+}
