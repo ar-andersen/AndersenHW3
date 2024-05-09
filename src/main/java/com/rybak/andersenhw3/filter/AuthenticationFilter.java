@@ -1,5 +1,6 @@
 package com.rybak.andersenhw3.filter;
 
+import com.rybak.andersenhw3.dao.UserDao;
 import com.rybak.andersenhw3.entity.Role;
 import com.rybak.andersenhw3.entity.User;
 import com.rybak.andersenhw3.exception.AccessDeniedException;
@@ -24,8 +25,9 @@ import java.util.regex.Matcher;
 @WebFilter("/*")
 public class AuthenticationFilter implements Filter {
 
-    private UserService userService = new UserService();
-    private PermissionService permissionService = new PermissionService();
+    private final UserDao userDao = new UserDao();
+    private final UserService userService = new UserService(userDao);
+    private final PermissionService permissionService = new PermissionService();
     private static final List<String> WHITE_LIST = List.of("/auth/login", "/auth/register");
 
     @Override

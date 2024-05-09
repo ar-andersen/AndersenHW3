@@ -1,34 +1,34 @@
 package com.rybak.andersenhw3.service;
 
+import com.rybak.andersenhw3.dao.CommentDao;
 import com.rybak.andersenhw3.entity.Comment;
-import com.rybak.andersenhw3.entity.Task;
 import com.rybak.andersenhw3.entity.User;
-import com.rybak.andersenhw3.exception.ProjectNotFoundException;
 import com.rybak.andersenhw3.exception.UserNotFoundException;
-import com.rybak.andersenhw3.storage.GlobalStorage;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
 public class CommentService {
 
-    private TaskService taskService;
-    private UserService userService;
+    private final TaskService taskService;
+    private final UserService userService;
+    private final CommentDao commentDao;
+    private final ProjectService projectService;
 
-    public CommentService(TaskService taskService, UserService userService) {
+    public CommentService(TaskService taskService,
+                          UserService userService,
+                          CommentDao commentDao,
+                          ProjectService projectService) {
         this.taskService = taskService;
         this.userService = userService;
+        this.commentDao = commentDao;
+        this.projectService = projectService;
     }
 
     public Comment createComment(UUID projectId, UUID taskId, Comment comment, UUID userId) {
-        Task taskFromDb = taskService.getTaskById(projectId, taskId);
+        taskService.getTaskById(projectId, taskId);
 
-        boolean noUserInTeam = GlobalStorage.projects.stream()
-                .filter(project -> project.getId().equals(projectId))
-                .findFirst()
-                .orElseThrow(() -> new ProjectNotFoundException(String.format("No project with id '%s'", projectId)))
-                .getTeam().stream()
+        boolean noUserInTeam = projectService.getProjectById(projectId).getTeam().stream()
                 .map(User::getId)
                 .noneMatch(teamMemberId -> teamMemberId.equals(userId));
 
@@ -39,18 +39,19 @@ public class CommentService {
         comment.setId(UUID.randomUUID());
         comment.setUser(userService.getUserById(userId));
 
-        GlobalStorage.comments.add(comment);
-        taskFromDb.addComment(comment);
+        commentDao.saveComment(comment, taskId);
 
         return comment;
     }
 
-    public List<Comment> getAllCommentsByTask(UUID projectId, UUID taskId) {
-        return taskService.getAllTasksByProjectId(projectId).stream()
-                .filter(task -> task.getId().equals(taskId))
-                .map(Task::getComments)
-                .flatMap(Collection::stream)
-                .toList();
+    public List<Comment> getAllCommentsByTask(UUID taskId) {
+        List<Comment> comments = commentDao.getAllCommentsByTaskId(taskId);
+
+        for (Comment comment : comments) {
+            comment.setUser(userService.getUserById(comment.getUser().getId()));
+        }
+
+        return comments;
     }
 
 }

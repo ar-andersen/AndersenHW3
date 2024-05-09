@@ -1,6 +1,10 @@
 package com.rybak.andersenhw3.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rybak.andersenhw3.dao.CommentDao;
+import com.rybak.andersenhw3.dao.ProjectDao;
+import com.rybak.andersenhw3.dao.TaskDao;
+import com.rybak.andersenhw3.dao.UserDao;
 import com.rybak.andersenhw3.dto.CommentCreateDto;
 import com.rybak.andersenhw3.entity.Comment;
 import com.rybak.andersenhw3.exception.TaskManagerGlobalException;
@@ -41,9 +45,10 @@ public class TaskServlet extends HttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         objectMapper = new ObjectMapper();
-        userService = new UserService();
-        taskService = new TaskService(new ProjectService(userService), userService);
-        commentService = new CommentService(taskService, userService);
+        userService = new UserService(new UserDao());
+        ProjectService projectService = new ProjectService(userService, new ProjectDao());
+        taskService = new TaskService(projectService, userService, new TaskDao());
+        commentService = new CommentService(taskService, userService, new CommentDao(), projectService);
         userMapper = new UserMapper();
         commentMapper = new CommentMapper(userMapper);
     }
@@ -79,7 +84,6 @@ public class TaskServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String pathInfo = WebUtil.getResolvedPathInfo(request);
-        String projectId = request.getParameter("projectId");
 
         response.setContentType("application/json");
         PrintWriter out = response.getWriter();
@@ -91,7 +95,7 @@ public class TaskServlet extends HttpServlet {
             String taskId = matcher.group(1);
 
             try {
-                List<Comment> comments = commentService.getAllCommentsByTask(UUID.fromString(projectId), UUID.fromString(taskId));
+                List<Comment> comments = commentService.getAllCommentsByTask(UUID.fromString(taskId));
                 out.print(objectMapper.writeValueAsString(commentMapper.toCommentResponseDtoList(comments)));
                 response.setStatus(200);
             } catch (TaskManagerGlobalException e) {

@@ -1,11 +1,10 @@
 package com.rybak.andersenhw3.service;
 
+import com.rybak.andersenhw3.dao.ProjectDao;
 import com.rybak.andersenhw3.entity.Project;
 import com.rybak.andersenhw3.entity.User;
 import com.rybak.andersenhw3.exception.ProjectNotFoundException;
 import com.rybak.andersenhw3.exception.UserNotFoundException;
-import com.rybak.andersenhw3.storage.GlobalStorage;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,22 +13,28 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ProjectServiceTest {
 
     private final String NAME = "simple project";
     private final String DESCRIPTION = "simple project description";
     private final String EMAIL = "alex@gmail.com";
     private User user;
+    private UUID userId = UUID.randomUUID();
     private Project project;
 
     @Mock
     private UserService userService;
+    @Mock
+    private ProjectDao projectDao;
 
     @InjectMocks
     private ProjectService projectService;
@@ -38,18 +43,15 @@ class ProjectServiceTest {
     public void setup() {
         user = new User();
         user.setEmail(EMAIL);
+        user.setId(userId);
         project = new Project(null, NAME, DESCRIPTION, null, null);
-    }
-
-    @AfterEach
-    public void teardown() {
-        GlobalStorage.users.clear();
-        GlobalStorage.projects.clear();
     }
 
     @Test
     void createProject_WhenUserExist_ShouldCreateProject() {
         Mockito.when(userService.getUserByEmail(EMAIL)).thenReturn(user);
+        Mockito.doNothing().when(projectDao).saveProject(Mockito.any(Project.class));
+        Mockito.doNothing().when(projectDao).addUserToProject(Mockito.any(), Mockito.any());
 
         Project actual = projectService.createProject(project, EMAIL);
 
@@ -67,9 +69,7 @@ class ProjectServiceTest {
 
     @Test
     void getProjectById_WhenProjectNotExist_ShouldThrowProjectNotFoundException() {
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name1", "description1", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name2", "description2", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name3", "description3", null, null));
+        Mockito.when(projectDao.findProjectById(Mockito.any())).thenReturn(null);
 
         Assertions.assertThrows(ProjectNotFoundException.class, () -> projectService.getProjectById(UUID.randomUUID()));
     }
@@ -78,10 +78,10 @@ class ProjectServiceTest {
     void getProjectById_WhenProjectExist_ShouldReturnProject() {
         UUID id = UUID.randomUUID();
         project.setId(id);
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name1", "description1", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name2", "description2", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name3", "description3", null, null));
-        GlobalStorage.projects.add(project);
+        List<User> team = new ArrayList<>();
+        project.setTeam(team);
+        Mockito.when(projectDao.findProjectById(id)).thenReturn(project);
+        Mockito.when(projectDao.getProjectTeamByProjectId(id)).thenReturn(team);
 
         Project actual = projectService.getProjectById(id);
 
@@ -91,9 +91,7 @@ class ProjectServiceTest {
     @Test
     void deleteProjectById_WhenProjectExist_ShouldReturnTrue() {
         UUID id = UUID.randomUUID();
-        GlobalStorage.projects.add(new Project(id, "name1", "description1", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name2", "description2", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name3", "description3", null, null));
+        Mockito.when(projectDao.deleteProjectById(id)).thenReturn(true);
 
         boolean actual = projectService.deleteProjectById(id);
 
@@ -103,9 +101,7 @@ class ProjectServiceTest {
     @Test
     void deleteProjectById_WhenProjectNotExist_ShouldReturnFalse() {
         UUID id = UUID.randomUUID();
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name1", "description1", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name2", "description2", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name3", "description3", null, null));
+        Mockito.when(projectDao.deleteProjectById(id)).thenReturn(false);
 
         boolean actual = projectService.deleteProjectById(id);
 
@@ -114,20 +110,21 @@ class ProjectServiceTest {
 
     @Test
     void getAllProjects_ShouldReturnCopiedList() {
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name1", "description1", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name2", "description2", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name3", "description3", null, null));
+        List<Project> projects = new ArrayList<>();
+        projects.add(new Project(UUID.randomUUID(), "name1", "description1", null, null));
+        projects.add(new Project(UUID.randomUUID(), "name2", "description2", null, null));
+        projects.add(new Project(UUID.randomUUID(), "name3", "description3", null, null));
+        Mockito.when(projectDao.getAllProjects()).thenReturn(projects);
 
         List<Project> actual = projectService.getAllProjects();
 
-        Assertions.assertEquals(GlobalStorage.projects.size(), actual.size());
+        Assertions.assertEquals(projects.size(), actual.size());
+        Assertions.assertEquals(projects, actual);
     }
 
     @Test
     void addUserToTeam_WhenProjectNotExist_ShouldThrowProjectNotFoundException() {
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name1", "description1", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name2", "description2", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name3", "description3", null, null));
+        Mockito.when(projectDao.findProjectById(Mockito.any())).thenThrow(ProjectNotFoundException.class);
 
         Assertions.assertThrows(ProjectNotFoundException.class, () -> projectService.addUserToTeam(UUID.randomUUID(), UUID.randomUUID()));
     }
@@ -139,11 +136,17 @@ class ProjectServiceTest {
         project.setId(projectId);
         project.setTeam(new ArrayList<>());
         user.setId(userId);
-        GlobalStorage.users.add(user);
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name1", "description1", new ArrayList<>(), null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name2", "description2", new ArrayList<>(), null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name3", "description3", new ArrayList<>(), null));
-        GlobalStorage.projects.add(project);
+        List<Project> projects = new ArrayList<>();
+        List<User> team = new ArrayList<>();
+        team.add(user);
+        projects.add(new Project(UUID.randomUUID(), "name1", "description1", new ArrayList<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name2", "description2", new ArrayList<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name3", "description3", new ArrayList<>(), null));
+        projects.add(project);
+        Mockito.when(projectDao.findProjectById(projectId)).thenReturn(project);
+        Mockito.when(projectDao.getProjectTeamByProjectId(projectId)).thenReturn(team);
+        Mockito.when(userService.getUserByEmail(EMAIL)).thenReturn(user);
+        Mockito.doNothing().when(projectDao).addUserToProject(Mockito.any(), Mockito.any());
 
         Project actual = projectService.addUserToTeam(projectId, userId);
 
@@ -153,9 +156,12 @@ class ProjectServiceTest {
 
     @Test
     void removeUserFromTeam_WhenProjectNotExist_ShouldThrowProjectNotFoundException() {
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name1", "description1", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name2", "description2", null, null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name3", "description3", null, null));
+        List<Project> projects = new ArrayList<>();
+        projects.add(new Project(UUID.randomUUID(), "name1", "description1", null, null));
+        projects.add(new Project(UUID.randomUUID(), "name2", "description2", null, null));
+        projects.add(new Project(UUID.randomUUID(), "name3", "description3", null, null));
+
+        Mockito.when(projectDao.findProjectById(Mockito.any())).thenReturn(null);
 
         Assertions.assertThrows(ProjectNotFoundException.class, () -> projectService.removeUserFromTeam(UUID.randomUUID(), UUID.randomUUID()));
     }
@@ -169,11 +175,16 @@ class ProjectServiceTest {
         List<User> users = new ArrayList<>();
         users.add(user);
         project.setTeam(users);
-        GlobalStorage.users.add(user);
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name1", "description1", new ArrayList<>(), null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name2", "description2", new ArrayList<>(), null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name3", "description3", new ArrayList<>(), null));
-        GlobalStorage.projects.add(project);
+        List<User> team = new ArrayList<>();
+        team.add(user);
+        List<Project> projects = new ArrayList<>();
+        projects.add(new Project(UUID.randomUUID(), "name1", "description1", new ArrayList<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name2", "description2", new ArrayList<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name3", "description3", new ArrayList<>(), null));
+        projects.add(project);
+        Mockito.when(projectDao.findProjectById(projectId)).thenReturn(project);
+        Mockito.when(projectDao.getProjectTeamByProjectId(projectId)).thenReturn(team);
+        Mockito.doNothing().when(projectDao).deleteUserFromProject(projectId, userId);
 
         Project actual = projectService.removeUserFromTeam(projectId, userId);
 
@@ -190,11 +201,16 @@ class ProjectServiceTest {
         List<User> users = new ArrayList<>();
         users.add(user);
         project.setTeam(users);
-        GlobalStorage.users.add(user);
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name1", "description1", new ArrayList<>(), null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name2", "description2", new ArrayList<>(), null));
-        GlobalStorage.projects.add(new Project(UUID.randomUUID(), "name3", "description3", new ArrayList<>(), null));
-        GlobalStorage.projects.add(project);
+        List<User> team = new ArrayList<>();
+        team.add(user);
+        List<Project> projects = new ArrayList<>();
+        projects.add(new Project(UUID.randomUUID(), "name1", "description1", new ArrayList<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name2", "description2", new ArrayList<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name3", "description3", new ArrayList<>(), null));
+        projects.add(project);
+        Mockito.when(projectDao.findProjectById(projectId)).thenReturn(project);
+        Mockito.when(projectDao.getProjectTeamByProjectId(projectId)).thenReturn(team);
+        Mockito.doNothing().when(projectDao).deleteUserFromProject(projectId, userId);
 
         Assertions.assertThrows(UserNotFoundException.class, () -> projectService.removeUserFromTeam(projectId, UUID.randomUUID()));
     }

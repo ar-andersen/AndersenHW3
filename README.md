@@ -103,19 +103,22 @@ git clone https://github.com/ar-andersen/AndersenHW3
 ```
 mvn package
 ```
-4) build docker image
+4) run docker compose file
 ```
-docker build -t andersenhw3:latest .
+docker compose up
 ```
-5) run docker image
-```
-docker run -p 8080:8080 andersenhw3:latest
-```
+
 Simplify instruction by running application in docker
-1) If you're bored to run all commands in instruction above, you can just run docker image from dockerhub repository:
+1) If you're bored to run all commands in instruction above, you can copy file 'docker-compose-remote.yaml' and run command:
 ```
-docker run -p 8080:8080 alexanderrybak/andersenhw3:latest
+docker compose -f docker-compose-remote.yaml up
 ```
+
+NOTE! If you want to run project without docker, you should pass VM options:
+```
+-DDB.PASSWORD=${DB.PASSWORD} -DDB.USERNAME=${DB.USERNAME} -DDB.URL=${DB.URL}
+```
+where ${DB.PASSWORD} is db password, ${DB.USERNAME} is db  username, ${DB.URL} is db full url. Application use postgresql.
 
 #### Test API
 

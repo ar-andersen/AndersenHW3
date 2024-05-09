@@ -1,5 +1,6 @@
 package com.rybak.andersenhw3.service;
 
+import com.rybak.andersenhw3.dao.TaskDao;
 import com.rybak.andersenhw3.dto.TaskUpdateDto;
 import com.rybak.andersenhw3.entity.Project;
 import com.rybak.andersenhw3.entity.Status;
@@ -7,20 +8,20 @@ import com.rybak.andersenhw3.entity.Task;
 import com.rybak.andersenhw3.entity.User;
 import com.rybak.andersenhw3.exception.TaskNotFoundException;
 import com.rybak.andersenhw3.exception.UserNotFoundException;
-import com.rybak.andersenhw3.storage.GlobalStorage;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
 public class TaskService {
 
-    private ProjectService projectService;
-    private UserService userService;
+    private final ProjectService projectService;
+    private final UserService userService;
+    private final TaskDao taskDao;
 
-    public TaskService(ProjectService projectService, UserService userService) {
+    public TaskService(ProjectService projectService, UserService userService, TaskDao taskDao) {
         this.projectService = projectService;
         this.userService = userService;
+        this.taskDao = taskDao;
     }
 
     public Task createTask(UUID projectId, Task task, UUID reporterId) {
@@ -39,31 +40,36 @@ public class TaskService {
         task.setReporter(reporter);
         task.setId(UUID.randomUUID());
 
-        GlobalStorage.tasks.add(task);
-        project.addTask(task);
+        taskDao.saveTask(task, projectId);
 
         return task;
     }
 
     public Task getTaskById(UUID projectId, UUID taskId) {
-        Project project = projectService.getProjectById(projectId);
+        projectService.getProjectById(projectId);
 
-        return project.getTasks().stream()
-                .filter(task -> task.getId().equals(taskId))
-                .findFirst()
-                .orElseThrow(() -> new TaskNotFoundException(String.format("Task with id %s not found", taskId)));
+        Task task = taskDao.getTaskById(taskId, projectId);
+
+        if (task == null) {
+            throw new TaskNotFoundException(String.format("Task with id '%s' not found", taskId));
+        }
+
+        if (task.getReporter().getId() != null) {
+            task.setReporter(userService.getUserById(task.getReporter().getId()));
+        }
+        if (task.getAssignee().getId() != null) {
+            task.setAssignee(userService.getUserById(task.getAssignee().getId()));
+        }
+
+        return task;
     }
 
     public List<Task> getAllTasksByProjectId(UUID projectId) {
-        return GlobalStorage.projects.stream()
-                .filter(project -> project.getId().equals(projectId))
-                .map(Project::getTasks)
-                .flatMap(Collection::stream)
-                .toList();
+        return taskDao.getAllTasks(projectId);
     }
 
     public boolean deleteTaskById(UUID id) {
-        return GlobalStorage.tasks.removeIf(task -> task.getId().equals(id));
+        return taskDao.deleteTask(id);
     }
 
     public Task updateTask(UUID projectId, UUID taskId, TaskUpdateDto taskUpdateDto) {
@@ -74,6 +80,8 @@ public class TaskService {
         task.setStatus(taskUpdateDto.getStatus());
         task.setAssignee(userService.getUserById(UUID.fromString(taskUpdateDto.getAssigneeId())));
         task.setReporter(userService.getUserById(UUID.fromString(taskUpdateDto.getReporterId())));
+
+        taskDao.updateTask(task);
 
         return task;
     }

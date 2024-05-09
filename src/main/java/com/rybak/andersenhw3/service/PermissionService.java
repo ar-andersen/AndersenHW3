@@ -1,20 +1,17 @@
 package com.rybak.andersenhw3.service;
 
-import com.rybak.andersenhw3.entity.Project;
+import com.rybak.andersenhw3.dao.ProjectDao;
 import com.rybak.andersenhw3.entity.User;
 import com.rybak.andersenhw3.exception.AccessDeniedException;
-import com.rybak.andersenhw3.storage.GlobalStorage;
 
-import java.util.Collection;
 import java.util.UUID;
 
 public class PermissionService {
 
+    private final ProjectDao projectDao = new ProjectDao();
+
     public void checkAccessToProject(UUID projectId, String email) {
-        GlobalStorage.projects.stream()
-                .filter(project -> project.getId().equals(projectId))
-                .map(Project::getTeam)
-                .flatMap(Collection::stream)
+        projectDao.getProjectTeamByProjectId(projectId).stream()
                 .map(User::getEmail)
                 .filter(userEmail -> userEmail.equals(email))
                 .findFirst()

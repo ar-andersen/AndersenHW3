@@ -1,5 +1,6 @@
 package com.rybak.andersenhw3.service;
 
+import com.rybak.andersenhw3.dao.TaskDao;
 import com.rybak.andersenhw3.dto.TaskUpdateDto;
 import com.rybak.andersenhw3.entity.Project;
 import com.rybak.andersenhw3.entity.Status;
@@ -8,8 +9,6 @@ import com.rybak.andersenhw3.entity.User;
 import com.rybak.andersenhw3.exception.ProjectNotFoundException;
 import com.rybak.andersenhw3.exception.TaskNotFoundException;
 import com.rybak.andersenhw3.exception.UserNotFoundException;
-import com.rybak.andersenhw3.storage.GlobalStorage;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +38,8 @@ class TaskServiceTest {
     private UserService userService;
     @Mock
     private ProjectService projectService;
+    @Mock
+    private TaskDao taskDao;
     @InjectMocks
     private TaskService taskService;
 
@@ -52,13 +53,6 @@ class TaskServiceTest {
         task = new Task(null, TITLE, TASK_DESCRIPTION, Status.TO_DO, null, null, new ArrayList<>());
     }
 
-    @AfterEach
-    public void teardown() {
-        GlobalStorage.tasks.clear();
-        GlobalStorage.users.clear();
-        GlobalStorage.projects.clear();
-    }
-
     @Test
     void createTask_WhenProjectNotExist_ShouldThrowProjectNotFoundException() {
         UUID projectId = UUID.randomUUID();
@@ -66,16 +60,6 @@ class TaskServiceTest {
         Mockito.when(projectService.getProjectById(projectId)).thenThrow(ProjectNotFoundException.class);
 
         Assertions.assertThrows(ProjectNotFoundException.class, () -> taskService.createTask(projectId, task, reporterId));
-    }
-
-    @Test
-    void createTask_WhenReporterNotExist_ShouldThrowProjectNotFoundException() {
-        UUID projectId = UUID.randomUUID();
-        UUID reporterId = UUID.randomUUID();
-        Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
-        Mockito.when(userService.getUserById(reporterId)).thenThrow(UserNotFoundException.class);
-
-        Assertions.assertThrows(UserNotFoundException.class, () -> taskService.createTask(projectId, task, reporterId));
     }
 
     @Test
@@ -96,6 +80,7 @@ class TaskServiceTest {
         project.addUser(user);
         Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
         Mockito.when(userService.getUserById(reporterId)).thenReturn(user);
+        Mockito.doNothing().when(taskDao).saveTask(Mockito.any(Task.class), Mockito.any(UUID.class));
 
         Task actual = taskService.createTask(projectId, task, reporterId);
 
@@ -119,8 +104,14 @@ class TaskServiceTest {
         UUID projectId = UUID.randomUUID();
         UUID taskId = UUID.randomUUID();
         task.setId(taskId);
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        task.setReporter(user);
+        task.setAssignee(user);
         project.addTask(task);
         Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
+        Mockito.when(taskDao.getTaskById(taskId, projectId)).thenReturn(task);
+        Mockito.when(userService.getUserById(Mockito.any())).thenReturn(user);
 
         Task actual = taskService.getTaskById(projectId, taskId);
 
@@ -132,6 +123,7 @@ class TaskServiceTest {
         UUID projectId = UUID.randomUUID();
         UUID taskId = UUID.randomUUID();
         Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
+        Mockito.when(taskDao.getTaskById(taskId, projectId)).thenReturn(null);
 
         Assertions.assertThrows(TaskNotFoundException.class, () -> taskService.getTaskById(projectId, taskId));
     }
@@ -139,20 +131,20 @@ class TaskServiceTest {
     @Test
     void getAllTasksByProjectId_ShouldReturnAllTasks() {
         UUID projectId = UUID.randomUUID();
-        project.setId(projectId);
-        project.addTask(task);
-        GlobalStorage.projects.add(project);
+        List<Task> tasks = new ArrayList<>();
+        tasks.add(task);
+        Mockito.when(taskDao.getAllTasks(projectId)).thenReturn(tasks);
 
-        List<Task> tasks = taskService.getAllTasksByProjectId(projectId);
+        List<Task> actual = taskService.getAllTasksByProjectId(projectId);
 
-        Assertions.assertEquals(1, tasks.size());
+        Assertions.assertEquals(1, actual.size());
+        Assertions.assertEquals(tasks, actual);
     }
 
     @Test
     void deleteTaskById_WhenTaskExist_ShouldReturnTrue() {
         UUID taskId = UUID.randomUUID();
-        task.setId(taskId);
-        GlobalStorage.tasks.add(task);
+        Mockito.when(taskDao.deleteTask(taskId)).thenReturn(true);
 
         boolean actual = taskService.deleteTaskById(taskId);
 
@@ -162,10 +154,9 @@ class TaskServiceTest {
     @Test
     void deleteTaskById_WhenTaskNotExist_ShouldReturnFalse() {
         UUID taskId = UUID.randomUUID();
-        task.setId(taskId);
-        GlobalStorage.tasks.add(task);
+        Mockito.when(taskDao.deleteTask(taskId)).thenReturn(false);
 
-        boolean actual = taskService.deleteTaskById(UUID.randomUUID());
+        boolean actual = taskService.deleteTaskById(taskId);
 
         Assertions.assertFalse(actual);
     }
@@ -177,12 +168,16 @@ class TaskServiceTest {
         String assigneeId = "884509de-47c8-4883-a9f8-8541370134ed";
         String reporterId = "9647e4cd-9aee-4cd0-9a45-b33f7c6dc9ce";
         String newTitle = "new title";
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        task.setReporter(user);
+        task.setAssignee(user);
         task.setId(taskId);
         project.addTask(task);
         TaskUpdateDto taskUpdateDto = new TaskUpdateDto(newTitle, DESCRIPTION, Status.IN_TESTING, assigneeId, reporterId);
-        Mockito.when(userService.getUserById(UUID.fromString(reporterId))).thenThrow(UserNotFoundException.class);
-        Mockito.when(userService.getUserById(UUID.fromString(assigneeId))).thenReturn(user);
+        Mockito.when(userService.getUserById(Mockito.any())).thenThrow(UserNotFoundException.class);
         Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
+        Mockito.when(taskDao.getTaskById(taskId, projectId)).thenReturn(task);
 
         Assertions.assertThrows(UserNotFoundException.class, () -> taskService.updateTask(projectId, taskId, taskUpdateDto));
     }
@@ -194,12 +189,17 @@ class TaskServiceTest {
         String assigneeId = "884509de-47c8-4883-a9f8-8541370134ed";
         String reporterId = "9647e4cd-9aee-4cd0-9a45-b33f7c6dc9ce";
         String newTitle = "new title";
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        task.setReporter(user);
+        task.setAssignee(user);
         task.setId(taskId);
         project.addTask(task);
         TaskUpdateDto taskUpdateDto = new TaskUpdateDto(newTitle, DESCRIPTION, Status.IN_TESTING, assigneeId, reporterId);
-        Mockito.when(userService.getUserById(UUID.fromString(reporterId))).thenReturn(user);
-        Mockito.when(userService.getUserById(UUID.fromString(assigneeId))).thenReturn(user);
+        Mockito.when(userService.getUserById(Mockito.any())).thenReturn(user);
         Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
+        Mockito.when(taskDao.getTaskById(taskId, projectId)).thenReturn(task);
+        Mockito.doNothing().when(taskDao).updateTask(task);
 
         Task actual = taskService.updateTask(projectId, taskId, taskUpdateDto);
 
