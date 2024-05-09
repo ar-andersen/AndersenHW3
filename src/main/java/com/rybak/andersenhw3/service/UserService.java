@@ -1,34 +1,46 @@
 package com.rybak.andersenhw3.service;
 
+import com.rybak.andersenhw3.dao.UserDao;
 import com.rybak.andersenhw3.entity.User;
 import com.rybak.andersenhw3.exception.UserNotFoundException;
-import com.rybak.andersenhw3.storage.GlobalStorage;
 
 import java.util.List;
 import java.util.UUID;
 
 public class UserService {
 
+    private final UserDao userDao;
+
+    public UserService(UserDao userDao) {
+        this.userDao = userDao;
+    }
+
     public List<User> getAllUsers() {
-        return List.copyOf(GlobalStorage.users);
+        return userDao.getAllUsers();
     }
 
     public User getUserById(UUID id) {
-        return GlobalStorage.users.stream()
-                .filter(user -> user.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new UserNotFoundException(String.format("User with id %s doesn't exists", id)));
+        User user = userDao.findUserById(id);
+
+        if (user == null) {
+            throw new UserNotFoundException(String.format("User with id %s doesn't exists", id));
+        }
+
+        return user;
     }
 
     public boolean deleteUserById(UUID id) {
-        return GlobalStorage.users.removeIf(user -> user.getId().equals(id));
+        return userDao.deleteUserById(id);
     }
 
     public User getUserByEmail(String email) {
-        return GlobalStorage.users.stream()
-                .filter(user -> user.getEmail().equals(email))
-                .findFirst()
-                .orElseThrow(() -> new UserNotFoundException(String.format("User with email %s doesn't exists", email)));
+        User user = userDao.findUserByEmail(email);
+
+        if (user == null) {
+            throw new UserNotFoundException(String.format("User with email %s doesn't exists", email));
+        }
+
+        return user;
     }
 
 }

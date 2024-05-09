@@ -1,6 +1,9 @@
 package com.rybak.andersenhw3.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rybak.andersenhw3.dao.ProjectDao;
+import com.rybak.andersenhw3.dao.TaskDao;
+import com.rybak.andersenhw3.dao.UserDao;
 import com.rybak.andersenhw3.dto.ProjectCreateDto;
 import com.rybak.andersenhw3.dto.ProjectResponseDto;
 import com.rybak.andersenhw3.dto.ProjectTeamUpdateDto;
@@ -49,11 +52,11 @@ public class ProjectServlet extends HttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         objectMapper = new ObjectMapper();
-        userService = new UserService();
+        userService = new UserService(new UserDao());
         userMapper = new UserMapper();
-        projectService = new ProjectService(userService);
+        projectService = new ProjectService(userService, new ProjectDao());
         commentMapper = new CommentMapper(userMapper);
-        taskService = new TaskService(projectService, userService);
+        taskService = new TaskService(projectService, userService, new TaskDao());
         taskMapper = new TaskMapper(commentMapper);
         projectMapper = new ProjectMapper(userMapper, taskMapper);
     }

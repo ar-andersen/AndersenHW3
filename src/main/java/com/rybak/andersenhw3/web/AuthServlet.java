@@ -1,6 +1,7 @@
 package com.rybak.andersenhw3.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rybak.andersenhw3.dao.UserDao;
 import com.rybak.andersenhw3.dto.LoginResponseDto;
 import com.rybak.andersenhw3.dto.UserLoginDto;
 import com.rybak.andersenhw3.dto.UserRegisterDto;
@@ -31,7 +32,8 @@ public class AuthServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        authService = new AuthService();
+        UserDao userDao = new UserDao();
+        authService = new AuthService(userDao);
         objectMapper = new ObjectMapper();
         userMapper = new UserMapper();
     }

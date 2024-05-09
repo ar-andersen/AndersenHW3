@@ -1,6 +1,7 @@
 package com.rybak.andersenhw3.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rybak.andersenhw3.dao.UserDao;
 import com.rybak.andersenhw3.dto.UserResponseDto;
 import com.rybak.andersenhw3.entity.User;
 import com.rybak.andersenhw3.exception.TaskManagerGlobalException;
@@ -32,7 +33,7 @@ public class UserServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        userService = new UserService();
+        userService = new UserService(new UserDao());
         objectMapper = new ObjectMapper();
         userMapper = new UserMapper();
     }
