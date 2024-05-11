@@ -2,6 +2,7 @@ package com.rybak.andersenhw3.service;
 
 import com.rybak.andersenhw3.dao.CommentDao;
 import com.rybak.andersenhw3.entity.Comment;
+import com.rybak.andersenhw3.entity.Task;
 import com.rybak.andersenhw3.entity.User;
 import com.rybak.andersenhw3.exception.UserNotFoundException;
 
@@ -26,7 +27,7 @@ public class CommentService {
     }
 
     public Comment createComment(UUID projectId, UUID taskId, Comment comment, UUID userId) {
-        taskService.getTaskById(projectId, taskId);
+        Task task = taskService.getTaskById(projectId, taskId);
 
         boolean noUserInTeam = projectService.getProjectById(projectId).getTeam().stream()
                 .map(User::getId)
@@ -38,20 +39,15 @@ public class CommentService {
 
         comment.setId(UUID.randomUUID());
         comment.setUser(userService.getUserById(userId));
+        comment.setTask(task);
 
-        commentDao.saveComment(comment, taskId);
+        commentDao.saveComment(comment);
 
         return comment;
     }
 
     public List<Comment> getAllCommentsByTask(UUID taskId) {
-        List<Comment> comments = commentDao.getAllCommentsByTaskId(taskId);
-
-        for (Comment comment : comments) {
-            comment.setUser(userService.getUserById(comment.getUser().getId()));
-        }
-
-        return comments;
+        return commentDao.getAllCommentsByTaskId(taskId);
     }
 
 }

@@ -4,6 +4,7 @@ import com.rybak.andersenhw3.dto.TaskCreateDto;
 import com.rybak.andersenhw3.dto.TaskResponseDto;
 import com.rybak.andersenhw3.entity.Task;
 
+import java.util.Collection;
 import java.util.List;
 
 public class TaskMapper {
@@ -35,7 +36,7 @@ public class TaskMapper {
         return target;
     }
 
-    public List<TaskResponseDto> toTaskResponseDtoList(List<Task> source) {
+    public List<TaskResponseDto> toTaskResponseDtoList(Collection<Task> source) {
         return source.stream()
                 .map(this::toTaskResponseDto)
                 .toList();

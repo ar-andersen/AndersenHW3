@@ -1,96 +1,77 @@
 package com.rybak.andersenhw3.dao;
 
-import com.rybak.andersenhw3.config.DataSource;
+import com.rybak.andersenhw3.config.HibernateUtil;
 import com.rybak.andersenhw3.entity.Task;
-import com.rybak.andersenhw3.exception.TaskManagerGlobalException;
-import com.rybak.andersenhw3.util.MapperUtil;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
 public class TaskDao {
 
-    private static final String INSERT_TASK = "INSERT INTO tasks (id, title, description, status, assignee_id, reporter_id, project_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    private static final String GET_TASK_BY_ID_AND_PROJECT_ID = "SELECT * FROM tasks WHERE id = ? AND project_id = ?";
-    private static final String GET_ALL_TASKS_BY_PROJECT_ID = "SELECT * FROM tasks WHERE project_id = ?";
-    private static final String DELETE_TASK = "DELETE FROM tasks WHERE id = ?";
-    private static final String UPDATE_TASK_BY_ID = "UPDATE tasks SET title = ?, description = ?, status = ?, assignee_id = ?, reporter_id = ? WHERE id = ?";
+    private static final String GET_TASK_BY_ID = "SELECT t FROM Task t LEFT JOIN FETCH t.comments c WHERE t.id = :id";
+    private static final String GET_ALL_TASKS = "SELECT t FROM Task t LEFT JOIN FETCH t.comments c WHERE t.project.id = :id";
 
-    public void saveTask(Task task, UUID projectId) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_TASK)) {
-            preparedStatement.setObject(1, task.getId());
-            preparedStatement.setString(2, task.getTitle());
-            preparedStatement.setString(3, task.getDescription());
-            preparedStatement.setString(4, task.getStatus().name());
-            preparedStatement.setObject(5, null);
-            preparedStatement.setObject(6, task.getReporter().getId());
-            preparedStatement.setObject(7, projectId);
+    public void saveTask(Task task) {
+        Session session = HibernateUtil.openSession();
+        Transaction transaction = session.beginTransaction();
 
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        session.persist(task);
+
+        transaction.commit();
+        session.close();
     }
 
-    public Task getTaskById(UUID taskId, UUID projectId) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_TASK_BY_ID_AND_PROJECT_ID)) {
-            preparedStatement.setObject(1, taskId);
-            preparedStatement.setObject(2, projectId);
+    public Task getTaskById(UUID taskId) {
+        Session session = HibernateUtil.openSession();
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+        Task task = session.createQuery(GET_TASK_BY_ID, Task.class)
+                .setParameter("id", taskId)
+                .uniqueResult();
 
-            return MapperUtil.getTask(resultSet);
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        session.close();
+
+        return task;
     }
 
     public List<Task> getAllTasks(UUID projectId) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_ALL_TASKS_BY_PROJECT_ID)) {
-            preparedStatement.setObject(1, projectId);
+        Session session = HibernateUtil.openSession();
+        Transaction transaction = session.beginTransaction();
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+        List<Task> tasks = session.createQuery(GET_ALL_TASKS, Task.class)
+                .setParameter("id", projectId)
+                .list();
 
-            return MapperUtil.getTaskList(resultSet);
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        transaction.commit();
+        session.close();
+
+        return tasks;
     }
 
     public boolean deleteTask(UUID taskId) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_TASK)) {
-            preparedStatement.setObject(1, taskId);
+        try(Session session = HibernateUtil.openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-            int rowsUpdated = preparedStatement.executeUpdate();
+            Task task = session.get(Task.class, taskId);
+            if (task == null) {
+                return false;
+            }
+            session.remove(task);
 
-            return rowsUpdated > 0;
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
+            transaction.commit();
+            return true;
         }
     }
 
     public void updateTask(Task task) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_TASK_BY_ID)) {
-            preparedStatement.setString(1, task.getTitle());
-            preparedStatement.setString(2, task.getDescription());
-            preparedStatement.setString(3, task.getStatus().name());
-            preparedStatement.setObject(4, task.getAssignee().getId());
-            preparedStatement.setObject(5, task.getReporter().getId());
-            preparedStatement.setObject(6, task.getId());
+        Session session = HibernateUtil.openSession();
+        Transaction transaction = session.beginTransaction();
 
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        session.merge(task);
+
+        transaction.commit();
+        session.close();
     }
 
 }

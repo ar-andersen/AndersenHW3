@@ -4,6 +4,7 @@ import com.rybak.andersenhw3.dto.UserRegisterDto;
 import com.rybak.andersenhw3.dto.UserResponseDto;
 import com.rybak.andersenhw3.entity.User;
 
+import java.util.Collection;
 import java.util.List;
 
 public class UserMapper {
@@ -28,7 +29,7 @@ public class UserMapper {
         return target;
     }
 
-    public List<UserResponseDto> toUserResponseDtoList(List<User> source) {
+    public List<UserResponseDto> toUserResponseDtoList(Collection<User> source) {
         return source.stream()
                 .map(this::toUserResponseDto)
                 .toList();

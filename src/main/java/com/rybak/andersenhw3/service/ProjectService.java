@@ -36,9 +36,6 @@ public class ProjectService {
             throw new ProjectNotFoundException(String.format("Project with id %s not found", id));
         }
 
-        List<User> team = projectDao.getProjectTeamByProjectId(id);
-        project.setTeam(team);
-
         return project;
     }
 
@@ -58,12 +55,10 @@ public class ProjectService {
                 .noneMatch(teamMemberId -> teamMemberId.equals(userId));
 
         if (noUserInProject) {
-            User user = userService.getUserById(userId);
             projectDao.addUserToProject(userId, projectId);
-            project.addUser(user);
         }
 
-        return project;
+        return getProjectById(projectId);
     }
 
     public Project removeUserFromTeam(UUID projectId, UUID userId) {

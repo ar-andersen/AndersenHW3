@@ -17,7 +17,9 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @ExtendWith(MockitoExtension.class)
@@ -78,7 +80,7 @@ class ProjectServiceTest {
     void getProjectById_WhenProjectExist_ShouldReturnProject() {
         UUID id = UUID.randomUUID();
         project.setId(id);
-        List<User> team = new ArrayList<>();
+        Set<User> team = new HashSet<>();
         project.setTeam(team);
         Mockito.when(projectDao.findProjectById(id)).thenReturn(project);
         Mockito.when(projectDao.getProjectTeamByProjectId(id)).thenReturn(team);
@@ -134,14 +136,14 @@ class ProjectServiceTest {
         UUID projectId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         project.setId(projectId);
-        project.setTeam(new ArrayList<>());
+        project.setTeam(new HashSet<>());
         user.setId(userId);
         List<Project> projects = new ArrayList<>();
-        List<User> team = new ArrayList<>();
+        Set<User> team = new HashSet<>();
         team.add(user);
-        projects.add(new Project(UUID.randomUUID(), "name1", "description1", new ArrayList<>(), null));
-        projects.add(new Project(UUID.randomUUID(), "name2", "description2", new ArrayList<>(), null));
-        projects.add(new Project(UUID.randomUUID(), "name3", "description3", new ArrayList<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name1", "description1", new HashSet<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name2", "description2", new HashSet<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name3", "description3", new HashSet<>(), null));
         projects.add(project);
         Mockito.when(projectDao.findProjectById(projectId)).thenReturn(project);
         Mockito.when(projectDao.getProjectTeamByProjectId(projectId)).thenReturn(team);
@@ -151,7 +153,6 @@ class ProjectServiceTest {
         Project actual = projectService.addUserToTeam(projectId, userId);
 
         Assertions.assertEquals(project, actual);
-        Assertions.assertEquals(1, actual.getTeam().size());
     }
 
     @Test
@@ -172,15 +173,15 @@ class ProjectServiceTest {
         UUID userId = UUID.randomUUID();
         user.setId(userId);
         project.setId(projectId);
-        List<User> users = new ArrayList<>();
+        Set<User> users = new HashSet<>();
         users.add(user);
         project.setTeam(users);
-        List<User> team = new ArrayList<>();
+        Set<User> team = new HashSet<>();
         team.add(user);
         List<Project> projects = new ArrayList<>();
-        projects.add(new Project(UUID.randomUUID(), "name1", "description1", new ArrayList<>(), null));
-        projects.add(new Project(UUID.randomUUID(), "name2", "description2", new ArrayList<>(), null));
-        projects.add(new Project(UUID.randomUUID(), "name3", "description3", new ArrayList<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name1", "description1", new HashSet<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name2", "description2", new HashSet<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name3", "description3", new HashSet<>(), null));
         projects.add(project);
         Mockito.when(projectDao.findProjectById(projectId)).thenReturn(project);
         Mockito.when(projectDao.getProjectTeamByProjectId(projectId)).thenReturn(team);
@@ -198,15 +199,15 @@ class ProjectServiceTest {
         UUID userId = UUID.randomUUID();
         user.setId(userId);
         project.setId(projectId);
-        List<User> users = new ArrayList<>();
+        Set<User> users = new HashSet<>();
         users.add(user);
         project.setTeam(users);
-        List<User> team = new ArrayList<>();
+        Set<User> team = new HashSet<>();
         team.add(user);
         List<Project> projects = new ArrayList<>();
-        projects.add(new Project(UUID.randomUUID(), "name1", "description1", new ArrayList<>(), null));
-        projects.add(new Project(UUID.randomUUID(), "name2", "description2", new ArrayList<>(), null));
-        projects.add(new Project(UUID.randomUUID(), "name3", "description3", new ArrayList<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name1", "description1", new HashSet<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name2", "description2", new HashSet<>(), null));
+        projects.add(new Project(UUID.randomUUID(), "name3", "description3", new HashSet<>(), null));
         projects.add(project);
         Mockito.when(projectDao.findProjectById(projectId)).thenReturn(project);
         Mockito.when(projectDao.getProjectTeamByProjectId(projectId)).thenReturn(team);
