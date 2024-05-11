@@ -1,106 +1,86 @@
 package com.rybak.andersenhw3.dao;
 
-import com.rybak.andersenhw3.config.DataSource;
+import com.rybak.andersenhw3.config.HibernateUtil;
 import com.rybak.andersenhw3.entity.User;
-import com.rybak.andersenhw3.exception.TaskManagerGlobalException;
-import com.rybak.andersenhw3.util.MapperUtil;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class UserDao {
 
-    private static final String GET_USER_BY_EMAIL = "SELECT * FROM users WHERE email = ?";
-    private static final String INSERT_USER = "INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)";
-    private static final String GET_USER_BY_ID = "SELECT * FROM users WHERE id = ?";
-    private static final String DELETE_USER_BY_ID = "DELETE FROM users WHERE id = ?";
-    private static final String GET_ALL_USERS = "SELECT * FROM users";
+    private static final String GET_USER_BY_EMAIL = "SELECT u FROM User u WHERE email = :email";
+    private static final String GET_ALL_USERS = "SELECT u FROM User u";
 
     public boolean existsByEmail(String email) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_USER_BY_EMAIL)) {
+        Session session = HibernateUtil.openSession();
 
-            preparedStatement.setString(1, email);
+        User user = session.createQuery(GET_USER_BY_EMAIL, User.class)
+                .setParameter("email", email)
+                .uniqueResult();
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+        session.close();
 
-            return resultSet.next();
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        return user != null;
     }
 
     public void insertUser(User user) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USER)) {
+        Session session = HibernateUtil.openSession();
+        Transaction transaction = session.beginTransaction();
 
-            preparedStatement.setObject(1, user.getId());
-            preparedStatement.setString(2, user.getName());
-            preparedStatement.setString(3, user.getEmail());
-            preparedStatement.setString(4, user.getPassword());
-            preparedStatement.setString(5, user.getRole().name());
+        session.persist(user);
 
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        transaction.commit();
+        session.close();
     }
 
     public User findUserByEmail(String email) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_USER_BY_EMAIL)) {
-            preparedStatement.setString(1, email);
+        Session session = HibernateUtil.openSession();
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+        User user = session.createQuery(GET_USER_BY_EMAIL, User.class)
+                .setParameter("email", email)
+                .uniqueResult();
 
-            return MapperUtil.getUser(resultSet);
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        session.close();
+
+        return user;
     }
 
     public User findUserById(UUID id) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_USER_BY_ID)) {
-            preparedStatement.setObject(1, id);
+        Session session = HibernateUtil.openSession();
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+        User user = session.get(User.class, id);
 
-            return MapperUtil.getUser(resultSet);
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        session.close();
+
+        return user;
     }
 
     public boolean deleteUserById(UUID id) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_USER_BY_ID)) {
-            preparedStatement.setObject(1, id);
+        try (Session session = HibernateUtil.openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-            int rowsUpdated = preparedStatement.executeUpdate();
+            User user = session.get(User.class, id);
+            if (user == null) {
+                return false;
+            }
+            session.remove(user);
 
-            return rowsUpdated > 0;
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
+            transaction.commit();
+
+            return true;
         }
     }
 
     public List<User> getAllUsers() {
-        List<User> users = new ArrayList<>();
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_ALL_USERS)) {
+        Session session = HibernateUtil.openSession();
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+        List<User> users = session.createQuery(GET_ALL_USERS, User.class).list();
 
-            return MapperUtil.getUserList(resultSet);
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        session.close();
+
+        return users;
     }
 
 }

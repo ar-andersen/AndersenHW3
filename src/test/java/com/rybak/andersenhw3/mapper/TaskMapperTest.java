@@ -32,7 +32,7 @@ class TaskMapperTest {
         String title = "title";
         String description = "description";
         String reporterId = "reporterId";
-        Task expected = new Task(null, title, description, null, null, null, null);
+        Task expected = new Task(null, title, description, null, null, null, null, null);
         TaskCreateDto taskCreateDto = new TaskCreateDto(title, description, reporterId);
 
         Task actual = taskMapper.toTask(taskCreateDto);
@@ -51,7 +51,7 @@ class TaskMapperTest {
         List<CommentResponseDto> commentResponseDtoList = new ArrayList<>();
         String title = "title";
         String description = "description";
-        Task task = new Task(taskId, title, description, status, assignee, reporter, comments);
+        Task task = new Task(taskId, title, description, status, assignee, reporter, null, comments);
         TaskResponseDto expected = new TaskResponseDto(taskId, title, description, status, assignee, reporter,
                 commentResponseDtoList);
         Mockito.when(commentMapper.toCommentResponseDtoList(comments)).thenReturn(commentResponseDtoList);
@@ -71,7 +71,7 @@ class TaskMapperTest {
         List<CommentResponseDto> commentResponseDtoList = new ArrayList<>();
         String title = "title";
         String description = "description";
-        Task task = new Task(taskId, title, description, status, assignee, reporter, comments);
+        Task task = new Task(taskId, title, description, status, assignee, reporter, null, comments);
         List<Task> tasks = List.of(task);
         TaskResponseDto taskResponseDto = new TaskResponseDto(taskId, title, description, status, assignee, reporter,
                 commentResponseDtoList);

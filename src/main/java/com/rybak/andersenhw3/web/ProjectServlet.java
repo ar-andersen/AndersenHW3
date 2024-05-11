@@ -182,7 +182,7 @@ public class ProjectServlet extends HttpServlet {
             try {
                 Task task = taskService.updateTask(UUID.fromString(projectId), UUID.fromString(taskId), taskUpdateDto);
 
-                out.print(objectMapper.writeValueAsString(task));
+                out.print(objectMapper.writeValueAsString(taskMapper.toTaskResponseDto(task)));
                 response.setStatus(200);
             } catch (TaskManagerGlobalException e) {
                 WebUtil.sendFailMessage(response, e.getMessage(), e.getCode());

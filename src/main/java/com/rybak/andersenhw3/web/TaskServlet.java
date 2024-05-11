@@ -73,7 +73,7 @@ public class TaskServlet extends HttpServlet {
             try {
                 Comment comment = commentService.createComment(UUID.fromString(projectId), UUID.fromString(taskId),
                         commentMapper.toComment(commentCreateDto), UUID.fromString(commentCreateDto.getUserId()));
-                out.print(objectMapper.writeValueAsString(comment));
+                out.print(objectMapper.writeValueAsString(commentMapper.toCommentResponseDto(comment)));
                 response.setStatus(200);
             } catch (TaskManagerGlobalException e) {
                 WebUtil.sendFailMessage(response, e.getMessage(), e.getCode());

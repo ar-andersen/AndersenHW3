@@ -1,120 +1,110 @@
 package com.rybak.andersenhw3.dao;
 
-import com.rybak.andersenhw3.config.DataSource;
+import com.rybak.andersenhw3.config.HibernateUtil;
 import com.rybak.andersenhw3.entity.Project;
 import com.rybak.andersenhw3.entity.User;
-import com.rybak.andersenhw3.exception.TaskManagerGlobalException;
-import com.rybak.andersenhw3.util.MapperUtil;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class ProjectDao {
 
-    private static final String INSERT_PROJECT = "INSERT INTO projects (id, name, description) VALUES (?,?,?)";
-    private static final String ADD_USER_TO_PROJECT = "INSERT INTO projects_users (user_id, project_id) VALUES (?,?)";
-    private static final String GET_PROJECT_BY_ID = "SELECT * FROM projects WHERE id = ?";
-    private static final String DELETE_PROJECT_BY_ID = "DELETE FROM projects WHERE id = ?";
-    private static final String GET_TEAM_BY_PROJECT_ID = "SELECT user_id as id, name, email, password, role FROM projects_users pu JOIN users u ON u.id = pu.user_id WHERE project_id = ?";
-    private static final String GET_ALL_PROJECTS = "SELECT * FROM projects";
-    private static final String DELETE_USER_FROM_PROJECT = "DELETE FROM projects_users WHERE project_id = ? AND user_id = ?";
+    private static final String GET_PROJECT_BY_ID = "SELECT p FROM Project p LEFT JOIN FETCH p.team LEFT JOIN FETCH p.tasks WHERE p.id = :id";
+    private static final String GET_ALL_PROJECTS = "SELECT p FROM Project p LEFT JOIN FETCH p.team LEFT JOIN FETCH p.tasks";
 
     public void saveProject(Project project) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PROJECT)) {
-            preparedStatement.setObject(1, project.getId());
-            preparedStatement.setString(2, project.getName());
-            preparedStatement.setString(3, project.getDescription());
+        Session session = HibernateUtil.openSession();
+        Transaction transaction = session.beginTransaction();
 
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        session.persist(project);
+
+        transaction.commit();
+        session.close();
     }
 
     public void addUserToProject(UUID userId, UUID projectId) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(ADD_USER_TO_PROJECT)) {
-            preparedStatement.setObject(1, userId);
-            preparedStatement.setObject(2, projectId);
+        Session session = HibernateUtil.openSession();
+        Transaction transaction = session.beginTransaction();
 
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        User user = session.get(User.class, userId);
+        Project project = session.get(Project.class, projectId);
+        project.addUser(user);
+
+        transaction.commit();
+        session.close();
     }
 
     public Project findProjectById(UUID projectId) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_PROJECT_BY_ID)) {
-            preparedStatement.setObject(1, projectId);
+        Session session = HibernateUtil.openSession();
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+        Project project = session.createQuery(GET_PROJECT_BY_ID, Project.class)
+                .setParameter("id", projectId)
+                .uniqueResult();
 
-            return MapperUtil.getProject(resultSet);
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        session.close();
+
+        return project;
     }
 
     public boolean deleteProjectById(UUID projectId) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_PROJECT_BY_ID)) {
-            preparedStatement.setObject(1, projectId);
+        try (Session session = HibernateUtil.openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-            int rowsUpdated = preparedStatement.executeUpdate();
+            Project project = session.get(Project.class, projectId);
 
-            return rowsUpdated > 0;
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
+            if (project == null) {
+                return false;
+            }
+
+            session.remove(project);
+
+            transaction.commit();
+
+            return true;
         }
     }
 
-    public List<User> getProjectTeamByProjectId(UUID projectId) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_TEAM_BY_PROJECT_ID)) {
-            preparedStatement.setObject(1, projectId);
+    public Set<User> getProjectTeamByProjectId(UUID projectId) {
+        Session session = HibernateUtil.openSession();
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+        Project project = session.createQuery(GET_PROJECT_BY_ID, Project.class)
+                .setParameter("id", projectId)
+                .uniqueResult();
 
-            return MapperUtil.getUserList(resultSet);
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
+        session.close();
+
+        if (project == null) {
+            return new HashSet<>();
         }
+
+        return project.getTeam();
     }
 
     public List<Project> getAllProjects() {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_ALL_PROJECTS)) {
+        Session session = HibernateUtil.openSession();
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+        List<Project> projects = session.createQuery(GET_ALL_PROJECTS, Project.class).list();
 
-            List<Project> projects = MapperUtil.getProjectList(resultSet);
-            for (Project project : projects) {
-                List<User> team = getProjectTeamByProjectId(project.getId());
-                project.setTeam(team);
-            }
+        session.close();
 
-            return projects;
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        return projects;
     }
 
     public void deleteUserFromProject(UUID projectId, UUID userId) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_USER_FROM_PROJECT)) {
-            preparedStatement.setObject(1, projectId);
-            preparedStatement.setObject(2, userId);
+        Session session = HibernateUtil.openSession();
+        Transaction transaction = session.beginTransaction();
 
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new TaskManagerGlobalException(e.getMessage(), 500);
-        }
+        Project project = session.get(Project.class, projectId);
+        project.getTeam().removeIf(user -> user.getId().equals(userId));
+
+        session.merge(project);
+
+        transaction.commit();
+        session.close();
     }
 
 }

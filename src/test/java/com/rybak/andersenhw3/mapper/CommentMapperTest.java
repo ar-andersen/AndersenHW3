@@ -30,7 +30,7 @@ class CommentMapperTest {
         String message = "message";
         String userId = "userId";
         CommentCreateDto commentCreateDto = new CommentCreateDto(message, userId);
-        Comment expected = new Comment(null, message, null);
+        Comment expected = new Comment(null, message, null, null);
 
         Comment actual = commentMapper.toComment(commentCreateDto);
 
@@ -47,7 +47,7 @@ class CommentMapperTest {
         UserResponseDto responseDto = new UserResponseDto();
         responseDto.setId(userId);
         CommentResponseDto expected = new CommentResponseDto(commentId, message, responseDto);
-        Comment comment = new Comment(commentId, message, user);
+        Comment comment = new Comment(commentId, message, user, null);
         Mockito.when(userMapper.toUserResponseDto(user)).thenReturn(responseDto);
 
         CommentResponseDto actual = commentMapper.toCommentResponseDto(comment);
@@ -66,7 +66,7 @@ class CommentMapperTest {
         responseDto.setId(userId);
         CommentResponseDto commentResponseDto = new CommentResponseDto(commentId, message, responseDto);
         List<CommentResponseDto> expected = List.of(commentResponseDto);
-        Comment comment = new Comment(commentId, message, user);
+        Comment comment = new Comment(commentId, message, user, null);
         List<Comment> comments = List.of(comment);
         Mockito.when(userMapper.toUserResponseDto(user)).thenReturn(responseDto);
 

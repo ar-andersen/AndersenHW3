@@ -19,6 +19,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,9 +49,9 @@ class TaskServiceTest {
         user = new User();
         user.setEmail(EMAIL);
 
-        project = new Project(null, NAME, DESCRIPTION, new ArrayList<>(), new ArrayList<>());
+        project = new Project(null, NAME, DESCRIPTION, new HashSet<>(), new HashSet<>());
 
-        task = new Task(null, TITLE, TASK_DESCRIPTION, Status.TO_DO, null, null, new ArrayList<>());
+        task = new Task(null, TITLE, TASK_DESCRIPTION, Status.TO_DO, null, null, null, new ArrayList<>());
     }
 
     @Test
@@ -80,7 +81,7 @@ class TaskServiceTest {
         project.addUser(user);
         Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
         Mockito.when(userService.getUserById(reporterId)).thenReturn(user);
-        Mockito.doNothing().when(taskDao).saveTask(Mockito.any(Task.class), Mockito.any(UUID.class));
+        Mockito.doNothing().when(taskDao).saveTask(Mockito.any(Task.class));
 
         Task actual = taskService.createTask(projectId, task, reporterId);
 
@@ -110,8 +111,7 @@ class TaskServiceTest {
         task.setAssignee(user);
         project.addTask(task);
         Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
-        Mockito.when(taskDao.getTaskById(taskId, projectId)).thenReturn(task);
-        Mockito.when(userService.getUserById(Mockito.any())).thenReturn(user);
+        Mockito.when(taskDao.getTaskById(taskId)).thenReturn(task);
 
         Task actual = taskService.getTaskById(projectId, taskId);
 
@@ -123,7 +123,7 @@ class TaskServiceTest {
         UUID projectId = UUID.randomUUID();
         UUID taskId = UUID.randomUUID();
         Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
-        Mockito.when(taskDao.getTaskById(taskId, projectId)).thenReturn(null);
+        Mockito.when(taskDao.getTaskById(taskId)).thenReturn(null);
 
         Assertions.assertThrows(TaskNotFoundException.class, () -> taskService.getTaskById(projectId, taskId));
     }
@@ -177,7 +177,7 @@ class TaskServiceTest {
         TaskUpdateDto taskUpdateDto = new TaskUpdateDto(newTitle, DESCRIPTION, Status.IN_TESTING, assigneeId, reporterId);
         Mockito.when(userService.getUserById(Mockito.any())).thenThrow(UserNotFoundException.class);
         Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
-        Mockito.when(taskDao.getTaskById(taskId, projectId)).thenReturn(task);
+        Mockito.when(taskDao.getTaskById(taskId)).thenReturn(task);
 
         Assertions.assertThrows(UserNotFoundException.class, () -> taskService.updateTask(projectId, taskId, taskUpdateDto));
     }
@@ -198,7 +198,7 @@ class TaskServiceTest {
         TaskUpdateDto taskUpdateDto = new TaskUpdateDto(newTitle, DESCRIPTION, Status.IN_TESTING, assigneeId, reporterId);
         Mockito.when(userService.getUserById(Mockito.any())).thenReturn(user);
         Mockito.when(projectService.getProjectById(projectId)).thenReturn(project);
-        Mockito.when(taskDao.getTaskById(taskId, projectId)).thenReturn(task);
+        Mockito.when(taskDao.getTaskById(taskId)).thenReturn(task);
         Mockito.doNothing().when(taskDao).updateTask(task);
 
         Task actual = taskService.updateTask(projectId, taskId, taskUpdateDto);

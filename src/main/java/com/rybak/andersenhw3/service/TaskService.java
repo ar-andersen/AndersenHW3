@@ -39,8 +39,9 @@ public class TaskService {
         task.setStatus(Status.TO_DO);
         task.setReporter(reporter);
         task.setId(UUID.randomUUID());
+        task.setProject(project);
 
-        taskDao.saveTask(task, projectId);
+        taskDao.saveTask(task);
 
         return task;
     }
@@ -48,17 +49,10 @@ public class TaskService {
     public Task getTaskById(UUID projectId, UUID taskId) {
         projectService.getProjectById(projectId);
 
-        Task task = taskDao.getTaskById(taskId, projectId);
+        Task task = taskDao.getTaskById(taskId);
 
         if (task == null) {
             throw new TaskNotFoundException(String.format("Task with id '%s' not found", taskId));
-        }
-
-        if (task.getReporter().getId() != null) {
-            task.setReporter(userService.getUserById(task.getReporter().getId()));
-        }
-        if (task.getAssignee().getId() != null) {
-            task.setAssignee(userService.getUserById(task.getAssignee().getId()));
         }
 
         return task;
@@ -83,7 +77,7 @@ public class TaskService {
 
         taskDao.updateTask(task);
 
-        return task;
+        return getTaskById(projectId, taskId);
     }
 
 }
